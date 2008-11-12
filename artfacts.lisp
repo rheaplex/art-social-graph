@@ -97,7 +97,41 @@
    (artfacts-artist-page-tree (artfacts-artist-page artist-id))))
 
 
+(defun write-graph-head (out graph-name)
+  (format out "graph ~a {~%    graph [];~%~%" graph-name))
 
+(defun write-graph-tail (out)
+  (format out "}~%"))
+
+(defun write-graph-nodes (out nodes)
+  (map 'nil
+       #'(lambda (node) 
+	   (format out "    ~d [label=\"~a\",];~%" 
+		   (most-shown-with-artist-id node) 
+		   (most-shown-with-artist-name node)))
+       nodes))
+
+(defun write-graph-edges (out nodes)
+  (map 'nil
+       #'(lambda (node) 
+	   (format out "    0 -- ~d [style=\"setlinewidth(~d)\",];~%" 
+		   (most-shown-with-artist-id node) 
+		   (most-shown-with-amount node)))
+       nodes))
+
+(defun write-graph-root (out name)
+  (format out "    0 [label=\"~a\",];~%" name))
+
+(defun write-graph (out artist nodes graph-name)
+  (write-graph-head out graph-name)
+  (write-graph-root out artist)
+  (write-graph-nodes out nodes)
+  (write-graph-edges out nodes)
+  (write-graph-tail out))
+
+(defun write-graph-to-file (artist nodes graph-name file-name)
+  (with-open-file (out file-name :direction :output :if-exists :supersede) 
+    (write-graph out artist nodes graph-name)))
 
 ;; Make graph
 ;; Keep track of depth/extent, don't exceed
@@ -124,9 +158,15 @@
 	 :AMOUNT 4 
 	 :ARTIST-ID 18250)))
 
+(write-graph-to-file "Danica Phelps" test-most-shown-with "G" "phelps.dot")
+
+;; dot -Tps phelps.dot -o phelps.ps
+
+
+#|
 (defclass most-edge (cl-graph:dot-edge-mixin
-			 cl-graph:weighted-edge-mixin
-			 cl-graph:graph-container-edge)
+		     cl-graph:weighted-edge-mixin
+		     cl-graph:graph-container-edge)
   ((most :accessor most)))
 
 (defun vertex-labeller (vertex stream)
@@ -162,3 +202,5 @@
 		   (cxml-dom:make-dom-builder)))
 
 ;; Search for "edge" class objects && get the value then re-arrange
+
+|#
